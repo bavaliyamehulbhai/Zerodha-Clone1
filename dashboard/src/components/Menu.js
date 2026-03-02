@@ -164,19 +164,17 @@ const Menu = () => {
               </p>
             </Link>
           </li>
-          {role === "admin" && (
-            <li>
-              <Link
-                style={{ textDecoration: "none" }}
-                to="/orders"
-                onClick={() => handleMenuClick(1)}
-              >
-                <p className={selectedMenu === 1 ? activeMenuClass : menuClass}>
-                  Orders
-                </p>
-              </Link>
-            </li>
-          )}
+          <li>
+            <Link
+              style={{ textDecoration: "none" }}
+              to="/orders"
+              onClick={() => handleMenuClick(1)}
+            >
+              <p className={selectedMenu === 1 ? activeMenuClass : menuClass}>
+                Orders
+              </p>
+            </Link>
+          </li>
           {role === "broker" && (
             <li>
               <Link
@@ -201,19 +199,17 @@ const Menu = () => {
               </p>
             </Link>
           </li>
-          {role === "admin" && (
-            <li>
-              <Link
-                style={{ textDecoration: "none" }}
-                to="/positions"
-                onClick={() => handleMenuClick(3)}
-              >
-                <p className={selectedMenu === 3 ? activeMenuClass : menuClass}>
-                  Positions
-                </p>
-              </Link>
-            </li>
-          )}
+          <li>
+            <Link
+              style={{ textDecoration: "none" }}
+              to="/positions"
+              onClick={() => handleMenuClick(3)}
+            >
+              <p className={selectedMenu === 3 ? activeMenuClass : menuClass}>
+                Positions
+              </p>
+            </Link>
+          </li>
           <li>
             <Link
               style={{ textDecoration: "none" }}
@@ -225,17 +221,19 @@ const Menu = () => {
               </p>
             </Link>
           </li>
-          <li>
-            <Link
-              style={{ textDecoration: "none" }}
-              to="/admin"
-              onClick={() => handleMenuClick(5)}
-            >
-              <p className={selectedMenu === 5 ? activeMenuClass : menuClass}>
-                Admin
-              </p>
-            </Link>
-          </li>
+          {role === "admin" && (
+            <li>
+              <Link
+                style={{ textDecoration: "none" }}
+                to="/admin"
+                onClick={() => handleMenuClick(5)}
+              >
+                <p className={selectedMenu === 5 ? activeMenuClass : menuClass}>
+                  Admin
+                </p>
+              </Link>
+            </li>
+          )}
           <li>
             <Link
               style={{ textDecoration: "none" }}
