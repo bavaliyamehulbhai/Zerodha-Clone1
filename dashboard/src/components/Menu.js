@@ -41,14 +41,14 @@ const Menu = () => {
           setRole(res.data.role);
         } else {
           if (window.location.pathname !== "/login") {
-            window.location.href = "http://localhost:3000/login";
+            window.location.href = "http://localhost:3001/login";
           }
         }
       })
       .catch((err) => {
         console.log(err);
         if (window.location.pathname !== "/login") {
-          window.location.href = "http://localhost:3000/login";
+          window.location.href = "http://localhost:3001/login";
         }
       });
   }, []);
@@ -88,7 +88,7 @@ const Menu = () => {
       .post("http://localhost:3002/logout", {}, { withCredentials: true })
       .then(() => {
         // Redirect to the frontend login page
-        window.location.href = "http://localhost:3000/login";
+        window.location.href = "http://localhost:3001/login";
       })
       .catch((err) => console.log(err));
   };

@@ -134,7 +134,7 @@ const Dashboard = () => {
                 }
               />
               <Route path="/profile" element={<Profile />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<Summary />} />
             </Routes>
           </div>
           <ChatWidget user={user} />

@@ -51,11 +51,11 @@ const Login = () => {
         handleSuccess(message);
         setTimeout(() => {
           if (user.role === "admin") {
-            window.location.href = "http://localhost:3001/admin";
+            window.location.href = "http://localhost:3000/admin";
           } else if (user.role === "broker") {
-            window.location.href = "http://localhost:3001/broker";
+            window.location.href = "http://localhost:3000/broker";
           } else {
-            window.location.href = "http://localhost:3001/";
+            window.location.href = "http://localhost:3000/";
           }
         }, 1000);
       } else {
@@ -99,8 +99,8 @@ const Login = () => {
         <span>
           Already have an account? <Link to={"/signup"}>Signup</Link>
         </span>
-        <span style={{marginTop: "10px"}}>
-           <Link to={"/forgot-password"} style={{textDecoration: "none", fontSize: "12px"}}>Forgot Password?</Link>
+        <span style={{ marginTop: "10px" }}>
+          <Link to={"/forgot-password"} style={{ textDecoration: "none", fontSize: "12px" }}>Forgot Password?</Link>
         </span>
       </form>
       <ToastContainer />

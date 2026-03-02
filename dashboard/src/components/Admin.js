@@ -110,7 +110,7 @@ const Admin = ({ user }) => {
     axios
       .post("http://localhost:3002/logout", {}, { withCredentials: true })
       .then(() => {
-        window.location.href = "http://localhost:3000/login";
+        window.location.href = "http://localhost:3001/login";
       })
       .catch((err) => console.log(err));
   };
