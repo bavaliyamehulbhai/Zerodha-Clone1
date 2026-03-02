@@ -11,9 +11,15 @@ const Holdings = () => {
   const { marketData } = useContext(MarketDataContext);
 
   useEffect(() => {
-    axios.get("http://localhost:3002/holdings", { withCredentials: true }).then((res) => {
-      setAllHoldings(res.data);
-    });
+    axios
+      .get("http://localhost:3002/holdings", { withCredentials: true })
+      .then((res) => {
+        setAllHoldings(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch((err) => {
+        console.error("Error fetching holdings:", err);
+        setAllHoldings([]);
+      });
   }, []);
 
   useEffect(() => {
@@ -45,7 +51,7 @@ const Holdings = () => {
   const sortedHoldings = [...allHoldings].sort((a, b) => {
     if (!sortConfig.key) return 0;
 
-    let valA, valB;    
+    let valA, valB;
     if (sortConfig.key === "day" || sortConfig.key === "net") {
       valA = parseFloat(a[sortConfig.key].replace(/[+%]/g, ""));
       valB = parseFloat(b[sortConfig.key].replace(/[+%]/g, ""));

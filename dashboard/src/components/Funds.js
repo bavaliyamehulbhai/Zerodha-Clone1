@@ -44,6 +44,7 @@ const Funds = () => {
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch wallet");
+      setWallet(null);
     } finally {
       setLoading(false);
     }
