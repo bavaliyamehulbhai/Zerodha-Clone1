@@ -1,0 +1,13 @@
+.create-ticket-link {
+  text-decoration: none;
+  color: #387ed1;
+  line-height: 2.5;
+}
+
+.create-ticket-link:hover {
+  text-decoration: underline;
+}
+
+.create-ticket-heading i {
+  margin-right: 15px;
+}
