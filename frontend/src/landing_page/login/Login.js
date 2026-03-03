@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const Login = () => {
@@ -103,7 +103,7 @@ const Login = () => {
           <Link to={"/forgot-password"} style={{ textDecoration: "none", fontSize: "12px" }}>Forgot Password?</Link>
         </span>
       </form>
-      <ToastContainer />
+
     </div>
   );
 };

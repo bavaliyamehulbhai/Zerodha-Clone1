@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import UserProfile from "./UserProfile";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmationModal from "./ConfirmationModal";
 import {
@@ -146,7 +146,7 @@ const Menu = () => {
 
   return (
     <div className="menu-container">
-      <ToastContainer position="bottom-right" autoClose={3000} />
+
       <img src="logo.png" style={{ width: "50px" }} />
       <div className="menu-toggle" onClick={() => setIsNavOpen(!isNavOpen)}>
         <MenuIcon style={{ fontSize: "2rem", color: "#444" }} />

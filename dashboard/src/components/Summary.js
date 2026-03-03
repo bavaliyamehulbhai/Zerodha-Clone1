@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { DoughnutChart } from "./DoughnoutChart";
 import { Refresh, Download } from "@mui/icons-material";
+import { MarketDataContext } from "./MarketDataContext";
 
 const Summary = () => {
   const [username, setUsername] = useState("User");
+  const [rawHoldings, setRawHoldings] = useState([]);
+  const [wallet, setWallet] = useState(null);
+  const { marketData } = useContext(MarketDataContext);
   const [holdingsSummary, setHoldingsSummary] = useState({
     currentValue: 0,
     investment: 0,
@@ -25,85 +29,22 @@ const Summary = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [userRes, holdingsRes, ordersRes] = await Promise.all([
+      const [userRes, holdingsRes, ordersRes, walletRes] = await Promise.all([
         axios.get("http://localhost:3002/user", { withCredentials: true }),
         axios.get("http://localhost:3002/holdings", { withCredentials: true }),
         axios.get("http://localhost:3002/allOrders", { withCredentials: true }),
+        axios.get("http://localhost:3002/funds/wallet", { withCredentials: true }),
       ]);
 
-      // Process User
       if (userRes.data?.status) {
         setUsername(userRes.data.user);
       }
+      if (walletRes.data?.success) {
+        setWallet(walletRes.data.wallet);
+      }
 
-      // Process Holdings
-      const holdings = Array.isArray(holdingsRes.data) ? holdingsRes.data : [];
-      const labels = [];
-      const data = [];
-      let maxPnlPercent = -Infinity;
-      let minPnlPercent = Infinity;
-      let gainer = null;
-      let loser = null;
+      setRawHoldings(Array.isArray(holdingsRes.data) ? holdingsRes.data : []);
 
-      const investment = holdings.reduce((acc, stock) => acc + (stock.avg * stock.qty), 0);
-      const currVal = holdings.reduce((acc, stock) => acc + stock.currentValue, 0);
-
-      holdings.forEach((stock) => {
-        labels.push(stock.name);
-        data.push(stock.currentValue);
-
-        const netPercent = parseFloat(stock.net) || 0;
-        if (netPercent > maxPnlPercent) {
-          maxPnlPercent = netPercent;
-          gainer = { ...stock, percent: netPercent };
-        }
-        if (netPercent < minPnlPercent) {
-          minPnlPercent = netPercent;
-          loser = { ...stock, percent: netPercent };
-        }
-      });
-
-      const pnl = currVal - investment;
-      const pnlPercent = investment === 0 ? 0 : (pnl / investment) * 100;
-
-      setHoldingsSummary({
-        currentValue: currVal,
-        investment: investment,
-        pnl: pnl,
-        pnlPercent: pnlPercent,
-      });
-
-      setTopGainer(gainer);
-      setTopLoser(loser);
-
-      setChartData({
-        labels: labels,
-        datasets: [
-          {
-            label: "Stock Value",
-            data: data,
-            backgroundColor: [
-              "rgba(255, 99, 132, 0.5)",
-              "rgba(54, 162, 235, 0.5)",
-              "rgba(255, 206, 86, 0.5)",
-              "rgba(75, 192, 192, 0.5)",
-              "rgba(153, 102, 255, 0.5)",
-              "rgba(255, 159, 64, 0.5)",
-            ],
-            borderColor: [
-              "rgba(255, 99, 132, 1)",
-              "rgba(54, 162, 235, 1)",
-              "rgba(255, 206, 86, 1)",
-              "rgba(75, 192, 192, 1)",
-              "rgba(153, 102, 255, 1)",
-              "rgba(255, 159, 64, 1)",
-            ],
-            borderWidth: 1,
-          },
-        ],
-      });
-
-      // Process Orders
       const orders = Array.isArray(ordersRes.data) ? ordersRes.data : [];
       const sortedOrders = orders.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -111,8 +52,9 @@ const Summary = () => {
       setRecentOrders(sortedOrders.slice(0, 5));
     } catch (error) {
       console.error("Error fetching summary data", error);
-      setHoldingsSummary({ currentValue: 0, investment: 0, pnl: 0, pnlPercent: 0 });
+      setRawHoldings([]);
       setRecentOrders([]);
+      setWallet(null);
     } finally {
       setLoading(false);
     }
@@ -121,6 +63,87 @@ const Summary = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!rawHoldings.length) {
+      setHoldingsSummary({ currentValue: 0, investment: 0, pnl: 0, pnlPercent: 0 });
+      setChartData({ labels: [], datasets: [] });
+      setTopGainer(null);
+      setTopLoser(null);
+      return;
+    }
+
+    const labels = [];
+    const data = [];
+    let maxPnlPercent = -Infinity;
+    let minPnlPercent = Infinity;
+    let gainer = null;
+    let loser = null;
+
+    const investment = rawHoldings.reduce((acc, stock) => acc + (stock.avg * stock.qty), 0);
+
+    // Calculate live current value
+    let currVal = 0;
+
+    rawHoldings.forEach((stock) => {
+      const livePrice = marketData[stock.name]?.price || stock.price || stock.avg;
+      const stockCurrentValue = stock.qty * livePrice;
+      currVal += stockCurrentValue;
+
+      labels.push(stock.name);
+      data.push(stockCurrentValue);
+
+      const netPercent = stock.avg > 0 ? ((livePrice - stock.avg) / stock.avg) * 100 : 0;
+      if (netPercent > maxPnlPercent) {
+        maxPnlPercent = netPercent;
+        gainer = { ...stock, percent: netPercent };
+      }
+      if (netPercent < minPnlPercent) {
+        minPnlPercent = netPercent;
+        loser = { ...stock, percent: netPercent };
+      }
+    });
+
+    const pnl = currVal - investment;
+    const pnlPercent = investment === 0 ? 0 : (pnl / investment) * 100;
+
+    setHoldingsSummary({
+      currentValue: currVal,
+      investment: investment,
+      pnl: pnl,
+      pnlPercent: pnlPercent,
+    });
+
+    setTopGainer(gainer);
+    setTopLoser(loser);
+
+    setChartData({
+      labels: labels,
+      datasets: [
+        {
+          label: "Stock Value",
+          data: data,
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.5)",
+            "rgba(54, 162, 235, 0.5)",
+            "rgba(255, 206, 86, 0.5)",
+            "rgba(75, 192, 192, 0.5)",
+            "rgba(153, 102, 255, 0.5)",
+            "rgba(255, 159, 64, 0.5)",
+          ],
+          borderColor: [
+            "rgba(255, 99, 132, 1)",
+            "rgba(54, 162, 235, 1)",
+            "rgba(255, 206, 86, 1)",
+            "rgba(75, 192, 192, 1)",
+            "rgba(153, 102, 255, 1)",
+            "rgba(255, 159, 64, 1)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    });
+  }, [marketData, rawHoldings]);
 
   const chartOptions = {
     onClick: (event, elements) => {
@@ -293,7 +316,7 @@ const Summary = () => {
           <div className="data">
             <div className="first">
               <h3>
-                {(4043.1).toLocaleString("en-IN", {
+                {(wallet?.availableBalance || 0).toLocaleString("en-IN", {
                   style: "currency",
                   currency: "INR",
                 })}
@@ -305,7 +328,7 @@ const Summary = () => {
               <p>
                 Used Margin{" "}
                 <span>
-                  {(3757.3).toLocaleString("en-IN", {
+                  {(wallet?.usedMargin || 0).toLocaleString("en-IN", {
                     style: "currency",
                     currency: "INR",
                   })}
@@ -314,7 +337,7 @@ const Summary = () => {
               <p>
                 Opening Balance{" "}
                 <span>
-                  {(4043.1).toLocaleString("en-IN", {
+                  {(wallet?.availableBalance || 0).toLocaleString("en-IN", {
                     style: "currency",
                     currency: "INR",
                   })}

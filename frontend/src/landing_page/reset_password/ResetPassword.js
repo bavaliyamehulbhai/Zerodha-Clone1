@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const ResetPassword = () => {
@@ -112,7 +112,7 @@ const ResetPassword = () => {
         </div>
         <button type="submit">Reset Password</button>
       </form>
-      <ToastContainer />
+
     </div>
   );
 };

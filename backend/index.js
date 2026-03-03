@@ -31,6 +31,7 @@ const riskRoute = require("./model/RiskRoute");
 const paperTradingRoute = require("./model/PaperTradingRoute");
 const notificationRoute = require("./model/NotificationRoute");
 const chatRoute = require("./model/ChatRoute");
+const watchlistRoute = require("./model/WatchlistRoute");
 const runAMOCron = require("./model/AMOCron");
 const runMarketCloseCron = require("./model/MarketCloseCron");
 const runAutoSquareOff = require("./model/AutoSquareOffCron");
@@ -78,6 +79,7 @@ app.use("/risk", riskRoute);
 app.use("/paper", paperTradingRoute);
 app.use("/", notificationRoute);
 app.use("/", chatRoute);
+app.use("/", watchlistRoute);
 
 const createSecretToken = (id) => {
   return jwt.sign({ id }, process.env.TOKEN_KEY || "secret_key_placeholder", {
@@ -663,6 +665,11 @@ app.get("/user", async (req, res) => {
   );
 });
 
+// Debug Endpoint
+app.get("/debug-ticks", (req, res) => {
+  res.json(MarketDataService.getStatus());
+});
+
 // Start Smart Features (Cron Jobs)
 runAMOCron();
 runMarketCloseCron();
@@ -673,6 +680,7 @@ runUnfreezeCron();
 io.use((socket, next) => {
   const cookieHeader = socket.handshake.headers.cookie;
   if (!cookieHeader) {
+    console.error("Socket Auth Failed: No cookies found");
     return next(new Error("Authentication error: No cookies found"));
   }
 
@@ -715,6 +723,14 @@ io.on("connection", async (socket) => {
     if (onlineUsers.get(socket.userId).size === 1) {
       io.emit("user_status", { userId: socket.userId, status: "online" });
     }
+
+    // Send instant market snapshot to the newly connected client
+    const MarketDataService = require("./model/MarketDataService");
+    const snapshot = [];
+    MarketDataService.lastPrices.forEach((price, symbol) => {
+      snapshot.push({ symbol, price, timestamp: MarketDataService.lastTickTime });
+    });
+    socket.emit("market_snapshot", snapshot);
 
     // If user is Admin or Broker, join the SUPPORT room to receive user messages
     try {
@@ -797,6 +813,7 @@ io.on("connection", async (socket) => {
 
 // Bridge MarketDataService Events to Socket.io
 MarketDataService.on("tick", (tick) => {
+  // console.log("Tick Emitted:", tick.symbol);
   io.emit("tick", tick);
 });
 

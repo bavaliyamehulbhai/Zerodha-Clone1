@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const Profile = () => {
@@ -43,17 +43,17 @@ const Profile = () => {
             bankAccounts: res.data.bankAccounts || [],
             tradingSegments: isKycVerified
               ? {
-                  equity: true,
-                  fno: true,
-                  currency: true,
-                  commodity: true,
-                }
+                equity: true,
+                fno: true,
+                currency: true,
+                commodity: true,
+              }
               : res.data.tradingSegments || {
-                  equity: false,
-                  fno: false,
-                  currency: false,
-                  commodity: false,
-                },
+                equity: false,
+                fno: false,
+                currency: false,
+                commodity: false,
+              },
             dematAccount: isKycVerified
               ? { status: "active" }
               : res.data.dematAccount || { status: "inactive" },
@@ -211,7 +211,7 @@ const Profile = () => {
               style={{
                 color:
                   profile.kyc.status === "verified" ||
-                  profile.kyc.status === "APPROVED"
+                    profile.kyc.status === "APPROVED"
                     ? "green"
                     : "orange",
                 fontWeight: "bold",
@@ -324,7 +324,7 @@ const Profile = () => {
           </button>
         </form>
       </div>
-      <ToastContainer />
+
     </div>
   );
 };

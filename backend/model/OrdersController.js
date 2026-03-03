@@ -72,8 +72,9 @@ const executeOrder = async (orderId, userId) => {
           name: order.name,
           qty: fillQty,
           avg: order.price,
-          net: 0,
-          day: 0,
+          price: order.price,
+          net: "0.00%",
+          day: "0.00%",
         });
       }
       await holding.save();
@@ -96,6 +97,9 @@ const executeOrder = async (orderId, userId) => {
       const marginPerQty = order.blockedMargin / order.qty;
       wallet.usedMargin -= marginPerQty * fillQty;
     } else {
+      // Release blocked margin for MIS SELL then credit the sale value
+      const marginPerQty = order.blockedMargin / order.qty;
+      wallet.usedMargin -= marginPerQty * fillQty;
       wallet.availableBalance += order.price * fillQty;
     }
 
@@ -114,6 +118,10 @@ const executeOrder = async (orderId, userId) => {
           avg: order.price,
           product: order.product,
           ltp: order.price,
+          price: order.price,
+          net: "0.00%",
+          day: "0.00%",
+          isLoss: false,
         });
       } else {
         if (position.qty >= 0) {
@@ -134,6 +142,10 @@ const executeOrder = async (orderId, userId) => {
           avg: order.price,
           product: order.product,
           ltp: order.price,
+          price: order.price,
+          net: "0.00%",
+          day: "0.00%",
+          isLoss: false,
         });
       } else {
         if (position.qty <= 0) {
@@ -182,13 +194,20 @@ MarketDataService.on("tick", async (tick) => {
       type: "LIMIT",
     });
 
+    if (pendingLimitOrders.length > 0) {
+      console.log(`[Matching Engine] Found ${pendingLimitOrders.length} pending LIMIT orders for ${symbol} at tick price ${price}`);
+    }
+
     for (const order of pendingLimitOrders) {
+      console.log(`  -> Checking order ${order._id}: mode=${order.mode}, orderPrice=${order.price}, currentPrice=${price}`);
       // Buy Limit: Execute if market price is lower or equal to limit price
       if (order.mode === "BUY" && price <= order.price) {
+        console.log(`    -> Executing BUY order ${order._id}`);
         await executeOrder(order._id, order.userId);
       }
       // Sell Limit: Execute if market price is higher or equal to limit price
       else if (order.mode === "SELL" && price >= order.price) {
+        console.log(`    -> Executing SELL order ${order._id}`);
         await executeOrder(order._id, order.userId);
       }
     }
@@ -333,6 +352,18 @@ module.exports.newOrder = async (req, res) => {
   const userId = req.user._id;
 
   try {
+    // Determine final target price
+    let finalPrice = Number(price);
+    if (type === "MARKET") {
+      const livePrice = MarketDataService.getLastPrice(name);
+      const basePrices = {
+        INFY: 1555.45, ONGC: 116.8, TCS: 3194.8, KPITTECH: 266.45,
+        QUICKHEAL: 308.55, WIPRO: 577.75, "M&M": 779.8, RELIANCE: 2112.4,
+        HUL: 2383.4, HDFCBANK: 1522.0, SBIN: 500, BHARTIARTL: 900, ITC: 400, TATAPOWER: 300, "NIFTY 50": 22000, "SENSEX": 72000
+      };
+      finalPrice = livePrice || basePrices[name] || 500;
+    }
+
     // 1. Wallet Check
     const wallet = await WalletModel.findOne({ userId });
     if (!wallet)
@@ -342,7 +373,7 @@ module.exports.newOrder = async (req, res) => {
 
     const requiredMargin = await calculateDynamicMargin(
       name,
-      Number(price),
+      finalPrice,
       Number(qty),
       product,
     );
@@ -356,7 +387,7 @@ module.exports.newOrder = async (req, res) => {
         });
       }
       // For SL orders, we don't block margin until triggered.
-    } else if (mode === "BUY") {
+    } else if (mode === "BUY" || (mode === "SELL" && product === "MIS")) {
       if (wallet.availableBalance < requiredMargin) {
         return res
           .status(400)
@@ -391,7 +422,7 @@ module.exports.newOrder = async (req, res) => {
     let newOrder = new OrdersModel({
       name,
       qty,
-      price,
+      price: finalPrice,
       mode,
       type,
       product,
@@ -400,7 +431,7 @@ module.exports.newOrder = async (req, res) => {
       triggerPrice: isStopLossOrder ? triggerPrice : undefined,
       trailingStopLoss:
         type === "TSL" || type === "TSL-M" ? trailingStopLoss : undefined,
-      blockedMargin: mode === "BUY" && !isStopLossOrder ? requiredMargin : 0,
+      blockedMargin: (mode === "BUY" || (mode === "SELL" && product === "MIS")) && !isStopLossOrder ? requiredMargin : 0,
     });
 
     await newOrder.save();

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
+
 import ConfirmationModal from "./ConfirmationModal";
 import TransactionHistoryModal from "./TransactionHistoryModal";
 import ChatWidget from "./ChatWidget";
@@ -973,7 +973,7 @@ const Admin = ({ user }) => {
         />
       )}
 
-      <ToastContainer />
+
       <style>{`
         .admin-section { padding: 20px; max-width: 1400px; margin: 0 auto; }
         .admin-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; flex-wrap: wrap; gap: 20px; }

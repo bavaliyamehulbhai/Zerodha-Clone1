@@ -27,6 +27,10 @@ const UserSchema = new Schema({
     type: String,
     default: "",
   },
+  watchlist: {
+    type: [String],
+    default: ["INFY", "ONGC", "TCS", "KPITTECH", "QUICKHEAL", "WIPRO", "M&M", "RELIANCE", "HUL"],
+  },
   createdAt: {
     type: Date,
     default: Date.now,

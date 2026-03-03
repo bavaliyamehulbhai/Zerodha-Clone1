@@ -14,7 +14,7 @@ class MarketDataService extends EventEmitter {
     this.lastPrices = new Map();
     this.dataInterval = null;
     this.healthCheckInterval = null;
-    
+
     // Initialize configuration
     this.init();
   }
@@ -38,9 +38,9 @@ class MarketDataService extends EventEmitter {
 
   connectUpstream() {
     if (this.dataInterval) clearInterval(this.dataInterval);
-    
+
     console.log(`[MarketData] Connecting to ${this.feedMode} feed...`);
-    
+
     // Simulate connection latency
     setTimeout(() => {
       this.isConnected = true;
@@ -57,10 +57,22 @@ class MarketDataService extends EventEmitter {
       if (!this.isConnected || this.exchangeStatus !== "OPEN") return;
 
       // Mock Ticks for demo
-      const symbols = ["INFY", "RELIANCE", "TCS", "HDFCBANK", "SBIN"];
+      const symbols = [
+        "NIFTY 50", "SENSEX", "INFY", "ONGC", "TCS", "KPITTECH", "QUICKHEAL", "WIPRO", "M&M", "RELIANCE", "HUL",
+        "HDFCBANK", "SBIN", "BHARTIARTL", "ITC", "TATAPOWER"
+      ];
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      
-      const currentPrice = this.lastPrices.get(symbol) || (Math.random() * 2000 + 500);
+
+      const basePrices = {
+        "NIFTY 50": 22000, "SENSEX": 72000, INFY: 1555.45, ONGC: 116.8,
+        TCS: 3194.8, KPITTECH: 266.45, QUICKHEAL: 308.55, WIPRO: 577.75,
+        "M&M": 779.8, RELIANCE: 2112.4, HUL: 2383.4, HDFCBANK: 1522.0,
+        SBIN: 500, BHARTIARTL: 900, ITC: 400, TATAPOWER: 300
+      };
+
+      let basePrice = basePrices[symbol] || 500;
+
+      const currentPrice = this.lastPrices.get(symbol) || (Math.random() * (basePrice * 0.2) + (basePrice * 0.9));
       const fluctuation = (Math.random() - 0.5) * (currentPrice * 0.01); // 1% fluctuation
       const newPrice = parseFloat((currentPrice + fluctuation).toFixed(2));
 
@@ -77,27 +89,27 @@ class MarketDataService extends EventEmitter {
       const change = Math.abs((tick.price - lastPrice) / lastPrice) * 100;
       if (change > this.spikeThreshold) {
         console.warn(`[MarketData] Price Spike Detected for ${tick.symbol}: ${change.toFixed(2)}%`);
-        this.emit("alert", { 
-          type: "PRICE_SPIKE", 
-          symbol: tick.symbol, 
-          message: `Price moved ${change.toFixed(2)}% instantly. Tick suppressed.` 
+        this.emit("alert", {
+          type: "PRICE_SPIKE",
+          symbol: tick.symbol,
+          message: `Price moved ${change.toFixed(2)}% instantly. Tick suppressed.`
         });
-        
+
         // Broadcast Market Crash/Spike Alert
         this.emit("notification", {
-            userId: "ALL",
-            data: {
-                title: "Market Volatility Alert",
-                message: `Unusual price movement detected in ${tick.symbol} (${change.toFixed(2)}%)`,
-                type: "MARKET_CRASH"
-            }
+          userId: "ALL",
+          data: {
+            title: "Market Volatility Alert",
+            message: `Unusual price movement detected in ${tick.symbol} (${change.toFixed(2)}%)`,
+            type: "MARKET_CRASH"
+          }
         });
         return; // Drop the tick
       }
     }
 
     this.lastPrices.set(tick.symbol, tick.price);
-    
+
     // Broadcast to WebSocket server (listener)
     this.emit("tick", tick);
   }
@@ -107,7 +119,7 @@ class MarketDataService extends EventEmitter {
 
     this.healthCheckInterval = setInterval(() => {
       const silenceDuration = Date.now() - this.lastTickTime;
-      
+
       // If no ticks for 5 seconds and we expect to be connected
       if (silenceDuration > 5000 && this.isConnected && this.exchangeStatus === "OPEN") {
         console.error("[MarketData] Feed Unhealthy! No ticks for 5s.");
@@ -119,7 +131,7 @@ class MarketDataService extends EventEmitter {
   handleFeedFailure() {
     this.isConnected = false;
     this.emit("connectionStatus", { status: "DISCONNECTED", reason: "Timeout" });
-    
+
     // Auto-switch logic
     if (this.feedMode === "PRIMARY") {
       console.log("[MarketData] Auto-switching to FALLBACK feed.");
@@ -132,10 +144,10 @@ class MarketDataService extends EventEmitter {
 
   async switchFeedMode(mode) {
     if (this.feedMode === mode && this.isConnected) return;
-    
+
     this.feedMode = mode;
     this.isConnected = false;
-    
+
     await MarketStatusModel.findOneAndUpdate({}, { feedMode: mode }, { upsert: true });
     this.connectUpstream();
   }
@@ -144,7 +156,7 @@ class MarketDataService extends EventEmitter {
     this.exchangeStatus = status;
     await MarketStatusModel.findOneAndUpdate({}, { exchangeStatus: status }, { upsert: true });
     console.log(`[MarketData] Exchange Status set to ${status}`);
-    
+
     if (status === "OPEN" && !this.isConnected) {
       this.connectUpstream();
     }
@@ -174,6 +186,7 @@ class MarketDataService extends EventEmitter {
     // For simulation, we return a mock volatility percentage (e.g., 1.5%)
     // Higher values for specific stocks can be hardcoded for testing
     if (["ADANIENT", "IDEA"].includes(symbol)) return 3.5; // High volatility
+    if (["NIFTY 50", "SENSEX"].includes(symbol)) return 0.5; // Low volatility for indices
     return 1.2; // Standard volatility
   }
 }

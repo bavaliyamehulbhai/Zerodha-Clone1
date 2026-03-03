@@ -35,6 +35,14 @@ export const MarketDataContextProvider = ({ children }) => {
       console.log("Connected to Market Data via Socket.IO");
     });
 
+    socket.on("market_snapshot", (snapshotArray) => {
+      const initialData = {};
+      snapshotArray.forEach((tick) => {
+        initialData[tick.symbol] = tick;
+      });
+      setMarketData((prev) => ({ ...prev, ...initialData }));
+    });
+
     socket.on("tick", (data) => {
       // Check for alerts
       const prevAlertsLength = alertsRef.current.length;

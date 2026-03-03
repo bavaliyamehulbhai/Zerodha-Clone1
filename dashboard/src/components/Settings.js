@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const Settings = () => {
@@ -116,7 +116,7 @@ const Settings = () => {
         </div>
 
         <hr style={{ margin: "30px 0", border: "0", borderTop: "1px solid #eee" }} />
-        
+
         <h4 style={{ marginBottom: "15px" }}>Broadcast Admin Alert</h4>
         <form onSubmit={handleBroadcastAlert} style={{ display: "flex", flexDirection: "column", gap: "15px", maxWidth: "400px" }}>
           <input type="text" name="title" placeholder="Alert Title" value={alertData.title} onChange={handleAlertChange} style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px" }} />
@@ -132,7 +132,7 @@ const Settings = () => {
         </form>
 
       </div>
-      <ToastContainer />
+
     </div>
   );
 };

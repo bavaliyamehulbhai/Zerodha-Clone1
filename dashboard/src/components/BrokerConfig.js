@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const BrokerConfig = () => {
@@ -111,7 +111,7 @@ const BrokerConfig = () => {
 
   return (
     <div className="broker-config-container">
-      <ToastContainer />
+
       <div className="admin-nav">
         <Link to="/admin" className="btn-nav">User Management</Link>
         <Link to="/admin/kyc" className="btn-nav">KYC Requests</Link>
